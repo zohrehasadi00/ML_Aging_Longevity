@@ -1,0 +1,14 @@
+# ML_Aging_Longevity
+## Done by Zohreh
+- Created the repo in GitHub and fixed the initialization, and send all an invitation to the repo.
+- Created a genral dictionary to the column names so we all understand them, edit them if I am wrong.
+- Configured logging (INFO level) and enabled console output via setup_logging().
+- Loaded core CSVs: mimic_demo/PATIENTS.csv, mimic_demo/ADMISSIONS.csv, mimic_demo/ICUSTAYS.csv and logged their shapes.
+- Merged tables: admissions + patients on subject_id, then merged with icustays on ['subject_id','hadm_id']; logged merged shape and column list.
+- df.csv is the merged tables, I put it there just because.
+- Calculated per-column missing-rate and dropped any columns with >30% missing (drop_thresh = 0.3); logged which columns were dropped.
+- Dropped identifier and leakage columns explicitly.
+- Logged various diagnostics: df.info() (non-null counts & dtypes), df.shape, df.describe(), number of duplicate rows (df.duplicated().sum()), first 10 rows (df.head(10)), and remaining missing-rate sorted.
+- File includes imports for plotting (seaborn, matplotlib) and numpy, but the script currently only uses pandas and logging (plotting not used).
+
+## Done by ...
