@@ -11,4 +11,5 @@
 - Logged various diagnostics: df.info() (non-null counts & dtypes), df.shape, df.describe(), number of duplicate rows (df.duplicated().sum()), first 10 rows (df.head(10)), and remaining missing-rate sorted.
 - File includes imports for plotting (seaborn, matplotlib) and numpy, but the script currently only uses pandas and logging (plotting not used).
 
-## Done by ...
+## Done by Pablo
+- Be carefull of these variables (data leakage): deathtime, dod, dod_hosp, dod_ssn, expire_flag (basically same as target)
