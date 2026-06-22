@@ -34,11 +34,16 @@
    Ref: Outliers, p24
 5. Row-wise NaN histogram: was missing, added with bins=30
    Ref: Outliers, p23
-6. Sanity check (describe()) after age clip: was missing, added
-   Ref: Outliers, p9
 - Added the missing packages in requirements.txt:
   numpy        (np.nan replacements)
   matplotlib   (all plots)
   seaborn      (sns.boxplot)
   missingno    (MSNO bar and matrix)
   scikit-learn (StandardScaler, RFE, LogisticRegression)
+- Uploaded plots/ folder with all generated plots:
+  histograms.png        (Outliers, p10-12)
+  boxplots.png          (Outliers, p13-14)
+  outlier_thresholds.png (Outliers, p16-17)
+  nan_per_row.png       (Outliers, p23)
+  missing_bar.png       (Outliers, p24)
+  missing_matrix.png    (Outliers, p24)
