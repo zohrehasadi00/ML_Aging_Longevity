@@ -13,3 +13,32 @@
 
 ## Done by Pablo
 - Be carefull of these variables (data leakage): deathtime, dod, dod_hosp, dod_ssn, expire_flag (basically same as target)
+## Done by Ons
+- Scope: preprocessing (EDA, Outliers, Data Preprocessing)
+  Lectures followed: Machine Learning for Aging: Exploratory Data Analysis
+                   Machine Learning for Aging: Outliers
+                   Machine Learning for Aging: Data Preprocessing
+- File created: improved_pipeline_ons.py
+- Issues found and fixed:
+1. Outlier threshold: -> 2.5
+   Lecture compares four levels (0.5, 1.5, 2.5, 3.0) and selects 2.5.
+   Ref: Outliers, p19
+2. Cardinality cutoff: >20 -> >15
+   Encoding flowchart uses < 15 as the decision boundary.
+   Ref: Data Preprocessing, p21
+3. Histogram and boxplot titles: added "(Cleaned)"
+   Lecture labels plots f"{column} (Cleaned)" after implausible value removal.
+   Ref: Outliers, p11, p13
+4. MSNO placement: moved from raw data to after outlier removal
+   Lecture shows MSNO only after outliers have been removed.
+   Ref: Outliers, p24
+5. Row-wise NaN histogram: was missing, added with bins=30
+   Ref: Outliers, p23
+6. Sanity check (describe()) after age clip: was missing, added
+   Ref: Outliers, p9
+- Added the missing packages in requirements.txt:
+  numpy        (np.nan replacements)
+  matplotlib   (all plots)
+  seaborn      (sns.boxplot)
+  missingno    (MSNO bar and matrix)
+  scikit-learn (StandardScaler, RFE, LogisticRegression)
