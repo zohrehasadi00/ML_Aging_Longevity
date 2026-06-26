@@ -11,8 +11,7 @@
 - Logged various diagnostics: df.info() (non-null counts & dtypes), df.shape, df.describe(), number of duplicate rows (df.duplicated().sum()), first 10 rows (df.head(10)), and remaining missing-rate sorted.
 - File includes imports for plotting (seaborn, matplotlib) and numpy, but the script currently only uses pandas and logging (plotting not used).
 
-## Done by Pablo
-- Be carefull of these variables (data leakage): deathtime, dod, dod_hosp, dod_ssn, expire_flag (basically same as target)
+
 ## Done by Ons
 - Scope: preprocessing (EDA, Outliers, Data Preprocessing)
   Lectures followed: Machine Learning for Aging: Exploratory Data Analysis
@@ -47,3 +46,29 @@
   nan_per_row.png       (Outliers, p23)
   missing_bar.png       (Outliers, p24)
   missing_matrix.png    (Outliers, p24)
+
+
+## Done by Pablo
+- Scope: Data Leakage, Train and Test Split
+  Lectures followed: Preventing Data Leakage, Data Splitting
+1. Data Leakage Columns that we should drop from the df.csv dataset:
+   - discharge_location: contains entries with 'DIED' -> Direct Target Leakage
+   - expire_flag: same as our target -> Direct Target Leakage
+   - dod: having a dod value means patient died -> Direct Target Leakage
+   - deathtime, dod_hosp, dod_ssn  : reveals death -> Direct Target Leakage
+   - dischtime, outtime, los (length of stay), last_careunit, last_wardid, edouttime: 
+      we want to predict if a person will die before admission. these variables are only know after admission or after the outcome -> Temporal Leakage
+   - has_chartevents_data: not leakage per se but can be a predictive proxy, patients with 
+      has_chartevents_data = 1  → likely severe → higher mortality risk
+      has_chartevents_data = 0  → likely mild → lower risk
+   - dob: not leakage per se but should be changed to 'age', age = admittime − dob
+   - admittime: same as above
+   - we should also drop all the duplicated columns: row_id_x, row_id_y, row_id, subject_id, hadm_id, icustay_id
+2. Train / Test Split: there are 2 issues in the audit regarding the data Split
+   1. The split is after the preprocessing when it should be before 
+      - moved the split up so it's done before preprocessing
+   2. Same patient can appear in both Test and Train split (multiple admissions) because data is split randomly ->  Failure to Consider Dependent Samples Data Leakage
+      - in the lecture she deals with this by using GroupKFold (DataLeakage page 8)
+      - it should be stratified -> used StratifiedGroupKFold
+      - adapted the preprocessing to this
+      - adapted the GridSearch to this
