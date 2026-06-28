@@ -127,7 +127,7 @@ plt.show()
 # data ditribution check to know if there is data imbalanced.
 cols_to_plot = [
     'hospital_expire_flag', 'gender', 'admission_type', 'insurance',
-    'ethnicity', 'discharge_location', 'first_careunit', 'los'
+    'ethnicity', 'first_careunit'
 ]
 
 for col in cols_to_plot:
@@ -178,7 +178,7 @@ for col in cols_to_plot:
     print(f"Saved plot: {out_path}")
 
 # Split: grouped and stratified
-X = adm_pat_icu.drop(columns=['hospital_expire_flag'])
+X = adm_pat_icu.drop(columns=['hospital_expire_flag', 'discharge_location', 'los'])
 y = adm_pat_icu['hospital_expire_flag']
 groups = adm_pat_icu['subject_id']  # <-- use patient ID
 
@@ -245,11 +245,16 @@ adm_pat_icu_train = adm_pat_icu_train.drop(columns=zero_var_cols)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=zero_var_cols, errors='ignore')
 
 # Final X/y
-X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag'])
+X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag', 'discharge_location', 'los'])
 y_train = adm_pat_icu_train['hospital_expire_flag']
 
-X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag'])
+X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag', 'discharge_location', 'los'])
 y_test = adm_pat_icu_test['hospital_expire_flag']
+
+# Drop ID columns, these are database identifiers, not clinical features.
+id_cols = ['subject_id', 'hadm_id', 'icustay_id', 'row_id_x', 'row_id_y', 'row_id']
+X_train = X_train.drop(columns=[c for c in id_cols if c in X_train.columns], errors='ignore')
+X_test  = X_test.drop(columns=[c for c in id_cols if c in X_test.columns], errors='ignore')
 
 # group-aware CV
 cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
@@ -325,9 +330,3 @@ plt.title('ROC Curve (All Models)')
 plt.legend()
 plt.show()
 
-# Handeling unbalanced data
-# 0 for majority 1 for minority
-minority_class = np.random.normal(3,1,100)
-majority_class = np.random.normal(0,1,900)
-data = np.concatenate((majority_class, minority_class))
-labels = np.concatenate((np.zeros(900), np.ones(100)))
