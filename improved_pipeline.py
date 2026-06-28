@@ -1,53 +1,333 @@
-import pandas as pd
-import logging
-import sys
-from pathlib import Path
 import numpy as np
-import seaborn as sns
+import pandas as pd
 import matplotlib.pyplot as plt
-import math
-LOGGER = logging.getLogger("improved_pipeline")
+import xgboost as xgb
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import StratifiedGroupKFold
+from sklearn.linear_model import LogisticRegression
+from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay, roc_curve
 
-def setup_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s %(levelname)s %(message)s",
-        handlers=[logging.StreamHandler(sys.stdout)],
-    )
-setup_logging()
+# Read core tables
+patients = pd.read_csv('mimic_demo/PATIENTS.csv')
+admissions = pd.read_csv('mimic_demo/ADMISSIONS.csv')
+icustays = pd.read_csv('mimic_demo/ICUSTAYS.csv')
+
+# Preview the shape and first rows of each table
+print("PATIENTS.csv shape:", patients.shape)
+print(patients.head())
+
+print("\nADMISSIONS.csv shape:", admissions.shape)
+print(admissions.head())
+
+print("\nICUSTAYS.csv shape:", icustays.shape)
+print(icustays.head())
+
+# Merge patients and admissions on 'subject_id'
+adm_pat = pd.merge(admissions, patients, on='subject_id', how='left')
+
+# Merge the result with icustays on ['subject_id', 'hadm_id']
+adm_pat_icu = pd.merge(adm_pat, icustays, on=['subject_id', 'hadm_id'], how='left')
+
+# Check the shape and sample rows of the merged table
+print("Merged table shape:", adm_pat_icu.shape)
+print(adm_pat_icu.head())
+
+# Check the distribution of the target variable
+print("\nHospital Expire Flag distribution:")
+print(adm_pat_icu['hospital_expire_flag'].value_counts())
+
+# Calculate missing value rate for each column
+missing_rate = adm_pat_icu.isnull().mean().sort_values(ascending=False)
+print("Missing value rate per column:\n", missing_rate)
+
+# Separate numeric and categorical columns
+numeric_cols = adm_pat_icu.select_dtypes(include=['number']).columns.tolist()
+categorical_cols = adm_pat_icu.select_dtypes(include=['object']).columns.tolist()
+
+print("Numeric columns:", numeric_cols)
+print("Categorical columns:", categorical_cols)
+
+# Describe numeric variables
+print("Descriptive statistics for numeric variables:")
+print(adm_pat_icu[numeric_cols].describe())
+
+# Frequency count for categorical variables (top 3 for each)
+for col in categorical_cols:
+    print(f"\nValue counts for categorical variable '{col}':")
+    print(adm_pat_icu[col].value_counts(dropna=False).head(3))
+
+# Plot distribution of the target variable
+adm_pat_icu['hospital_expire_flag'].value_counts().plot(kind='bar')
+plt.title('Distribution of Hospital Expire Flag')
+plt.xlabel('Hospital Expire Flag (0=Survived, 1=Died)')
+plt.ylabel('Count')
+plt.show()
+
+# Plot gender distribution
+adm_pat_icu['gender'].value_counts().plot(kind='bar')
+plt.title('Gender Distribution')
+plt.xlabel('Gender')
+plt.ylabel('Count')
+plt.show()
+
+# Plot admission_type distribution
+adm_pat_icu['admission_type'].value_counts().plot(kind='bar')
+plt.title('Admission Type Distribution')
+plt.xlabel('Admission Type')
+plt.ylabel('Count')
+plt.show()
+
+# Plot insurance distribution
+adm_pat_icu['insurance'].value_counts().plot(kind='bar')
+plt.title('Insurance Distribution')
+plt.xlabel('Insurance')
+plt.ylabel('Count')
+plt.show()
+
+# Plot ethnicity distribution
+adm_pat_icu['ethnicity'].value_counts().plot(kind='bar')
+plt.title('Ethnicity Distribution')
+plt.xlabel('Ethnicity')
+plt.ylabel('Count')
+plt.show()
+
+# Histogram for length of stay (los)
+adm_pat_icu['los'].plot(kind='hist', bins=20)
+plt.title('Distribution of Length of Stay (LOS)')
+plt.xlabel('Length of Stay (days)')
+plt.ylabel('Frequency')
+plt.show()
+
+# Boxplot for LOS by hospital_expire_flag
+adm_pat_icu.boxplot(column='los', by='hospital_expire_flag')
+plt.title('LOS by Hospital Expire Flag')
+plt.xlabel('Hospital Expire Flag (0=Survived, 1=Died)')
+plt.ylabel('Length of Stay (days)')
+plt.suptitle('')
+plt.show()
+
+# Death rate by admission type
+death_by_admtype = adm_pat_icu.groupby('admission_type')['hospital_expire_flag'].mean()
+death_by_admtype.plot(kind='bar')
+plt.title('Death Rate by Admission Type')
+plt.xlabel('Admission Type')
+plt.ylabel('Death Rate')
+plt.show()
+
+# Death rate by insurance
+death_by_insurance = adm_pat_icu.groupby('insurance')['hospital_expire_flag'].mean()
+death_by_insurance.plot(kind='bar')
+plt.title('Death Rate by Insurance')
+plt.xlabel('Insurance')
+plt.ylabel('Death Rate')
+plt.show()
+
+# data ditribution check to know if there is data imbalanced.
+cols_to_plot = [
+    'hospital_expire_flag', 'gender', 'admission_type', 'insurance',
+    'ethnicity', 'discharge_location', 'first_careunit', 'los'
+]
+
+for col in cols_to_plot:
+    if col not in adm_pat_icu.columns:
+        continue
+
+    safe_name = col.replace(' ', '_').replace('/', '_').replace('\n', '_')
+    out_path = f'plots/{safe_name}_count.png'
+
+    # print percentage breakdown for this column
+    if pd.api.types.is_numeric_dtype(adm_pat_icu[col]) and col == 'los':
+        # For LOS print basic stats and non-null percentage
+        total = len(adm_pat_icu)
+        nonnull = adm_pat_icu[col].notna().sum()
+        nonnull_pct = nonnull / total * 100
+        print(f"\n{col} - non-null: {nonnull}/{total} ({nonnull_pct:.2f}%)")
+        print(f"  min: {adm_pat_icu[col].min():.2f}, 25%: {adm_pat_icu[col].quantile(0.25):.2f}, median: {adm_pat_icu[col].median():.2f}, mean: {adm_pat_icu[col].mean():.2f}, 75%: {adm_pat_icu[col].quantile(0.75):.2f}, max: {adm_pat_icu[col].max():.2f}")
+    else:
+        vc_pct = adm_pat_icu[col].value_counts(dropna=False, normalize=True) * 100
+        print(f"\n{col} distribution (percentage of total):")
+        for val, pct in vc_pct.items():
+            # format NaN label clearly
+            lab = 'NaN' if pd.isna(val) else str(val)
+            print(f"  {lab}: {pct:.2f}%")
+
+    # Create and save the plot
+    plt.figure(figsize=(10, 6))
+    if pd.api.types.is_numeric_dtype(adm_pat_icu[col]) and col == 'los':
+        # LOS: histogram
+        data = adm_pat_icu[col].dropna()
+        plt.hist(data, bins=30, color='blue', rwidth=0.9)
+        plt.xlabel('Length of Stay (days)', fontsize=12)
+        plt.ylabel('Count', fontsize=12)
+        plt.title('Length of Stay (LOS) Distribution', fontsize=14)
+    else:
+        vc = adm_pat_icu[col].value_counts(dropna=False)
+        labels = vc.index.astype(str)
+        values = vc.values
+        plt.bar(labels, values, color='blue', width=0.6)
+        plt.xlabel(col.replace('_', ' ').title(), fontsize=12)
+        plt.ylabel('Count', fontsize=12)
+        plt.title(col.replace('_', ' ').title() + ' Distribution', fontsize=14)
+        plt.xticks(rotation=45, ha='right')
+
+    plt.tight_layout()
+    plt.savefig(out_path, dpi=200)
+    plt.close()
+    print(f"Saved plot: {out_path}")
+
+# Split: grouped and stratified
+X = adm_pat_icu.drop(columns=['hospital_expire_flag'])
+y = adm_pat_icu['hospital_expire_flag']
+groups = adm_pat_icu['subject_id']  # <-- use patient ID
+
+sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
+train_idx, test_idx = next(sgkf.split(X, y, groups=groups))  # <-- one fold as test
+
+# create split datasets
+adm_pat_icu_train = adm_pat_icu.iloc[train_idx].copy()
+adm_pat_icu_test = adm_pat_icu.iloc[test_idx].copy()
 
 
-def run_pipeline():
-    patients = pd.read_csv('mimic_demo/PATIENTS.csv')
-    admissions = pd.read_csv('mimic_demo/ADMISSIONS.csv')
-    icustays = pd.read_csv('mimic_demo/ICUSTAYS.csv')
-    LOGGER.info("Loaded core tables: patients=%s, admissions=%s, icustays=%s", patients.shape, admissions.shape, icustays.shape)
+# Preprocessing
+# Calculate missing value rates
+missing_rate = adm_pat_icu_train.isnull().mean().sort_values(ascending=False)
 
-    # Merge tables (left joins as original)
-    adm_pat = pd.merge(admissions, patients, on="subject_id", how="left")
-    df = pd.merge(adm_pat, icustays, on=["subject_id", "hadm_id"], how="left")
-    LOGGER.info("Merged dataframe shape: %s", df.shape)
-    LOGGER.info(df.columns.tolist())
+# Drop columns with more than 25% missing data
+threshold = 0.25
+cols_to_drop = missing_rate[missing_rate > threshold].index.tolist()
 
-    missing_rate = df.isnull().mean()
-    #TO DO: Should we leave this on 0.3? higher? lower?
-    drop_thresh = 0.3
-    cols_to_drop = missing_rate[missing_rate > drop_thresh].index.tolist()
+adm_pat_icu_train = adm_pat_icu_train.drop(columns=cols_to_drop)
+adm_pat_icu_test = adm_pat_icu_test.drop(columns=cols_to_drop, errors='ignore')
 
-    if cols_to_drop:
-        LOGGER.info("Dropping high-missing columns (>%s): %s", drop_thresh, cols_to_drop)
-        df = df.drop(columns=cols_to_drop)
+# Fill missing values in categorical variables with 'Unknown'
+for col in adm_pat_icu_train.select_dtypes(include=['object', 'string']).columns:
+    adm_pat_icu_train[col] = adm_pat_icu_train[col].fillna('Unknown')
+    adm_pat_icu_test[col] = adm_pat_icu_test[col].fillna('Unknown')
 
-    # droping the IDs, cause they wont help with ML classification
-    # remove los, to prevent data leakage, cause this is calculated after the patient is dead
-    #TO DO: What else should we remove? How to know?
-    df = df.drop(columns=(["subject_id", "hadm_id", "icustay_id", "row_id", "row_id_x", "row_id_y", "los"]))
-    LOGGER.info("Non-Null Count of each column and their type: %s", df.info())
-    LOGGER.info("Dataframe shape after cleanup: %s", df.shape)
-    LOGGER.info("General info from the datafram:\n %s", df.describe())
-    LOGGER.info("Sum of duplicates in each row: %s", df.duplicated().sum())
-    LOGGER.info(df.head(10))
-    LOGGER.info(df.isnull().mean().sort_values(ascending=False))
+# Fill missing values in numeric variables with TRAIN median
+for col in adm_pat_icu_train.select_dtypes(include='number').columns:
+    if adm_pat_icu_train[col].isnull().sum() > 0:
+        median_val = adm_pat_icu_train[col].median()
+        adm_pat_icu_train[col] = adm_pat_icu_train[col].fillna(median_val)
+        adm_pat_icu_test[col] = adm_pat_icu_test[col].fillna(median_val)
 
-if __name__ == "__main__":
-    run_pipeline()
+# Cap LOS at 99th percentile to handle extreme outliers
+los_cap = adm_pat_icu_train['los'].quantile(0.99)
+adm_pat_icu_train['los'] = adm_pat_icu_train['los'].clip(upper=los_cap)
+adm_pat_icu_test['los'] = adm_pat_icu_test['los'].clip(upper=los_cap)
+
+# List of categorical columns
+categorical_cols = [col for col in adm_pat_icu_train.select_dtypes(include=['object', 'string']).columns if col != 'hospital_expire_flag']
+
+# Apply one-hot encoding
+adm_pat_icu_train = pd.get_dummies(adm_pat_icu_train, columns=categorical_cols, drop_first=True)
+adm_pat_icu_test = pd.get_dummies(adm_pat_icu_test, columns=categorical_cols, drop_first=True)
+
+# Align columns
+adm_pat_icu_train, adm_pat_icu_test = adm_pat_icu_train.align(adm_pat_icu_test, join='left', axis=1, fill_value=0)
+
+# Select numeric columns (excluding target and IDs)
+num_cols = [col for col in adm_pat_icu_train.columns 
+            if adm_pat_icu_train[col].dtype != 'object' 
+            and col not in ['hospital_expire_flag', 'subject_id', 'hadm_id', 'icustay_id', 'row_id_x', 'row_id_y', 'row_id']]
+
+scaler = StandardScaler()
+adm_pat_icu_train[num_cols] = scaler.fit_transform(adm_pat_icu_train[num_cols])
+adm_pat_icu_test[num_cols] = scaler.transform(adm_pat_icu_test[num_cols])
+
+# Remove features with zero variance or that are duplicates
+nunique = adm_pat_icu_train.nunique()
+zero_var_cols = nunique[nunique <= 1].index.tolist()
+
+adm_pat_icu_train = adm_pat_icu_train.drop(columns=zero_var_cols)
+adm_pat_icu_test = adm_pat_icu_test.drop(columns=zero_var_cols, errors='ignore')
+
+# Final X/y
+X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag'])
+y_train = adm_pat_icu_train['hospital_expire_flag']
+
+X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag'])
+y_test = adm_pat_icu_test['hospital_expire_flag']
+
+# group-aware CV
+cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
+
+# Set up grid search for Logistic Regression
+logreg = LogisticRegression(max_iter=5000, random_state=42)
+param_grid_lr = {'C': [0.01, 0.1, 1, 10, 100]}
+grid_lr = GridSearchCV(logreg, param_grid_lr, cv=cv, scoring='roc_auc')
+grid_lr.fit(X_train, y_train, groups=groups.iloc[train_idx])
+
+print("Best parameters (Logistic Regression):", grid_lr.best_params_)
+logreg_best = grid_lr.best_estimator_
+
+# Set up grid search for Random Forest
+rf = RandomForestClassifier(random_state=42)
+param_grid_rf = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [None, 5, 10]
+}
+grid_rf = GridSearchCV(rf, param_grid_rf, cv=cv, scoring='roc_auc')
+grid_rf.fit(X_train, y_train, groups=groups.iloc[train_idx])
+
+print("Best parameters (Random Forest):", grid_rf.best_params_)
+rf_best = grid_rf.best_estimator_
+
+xgb_clf = xgb.XGBClassifier(random_state=42, eval_metric='logloss')
+param_grid_xgb = {
+    'n_estimators': [50, 100, 200],
+    'max_depth': [3, 5, 7]
+}
+grid_xgb = GridSearchCV(xgb_clf, param_grid_xgb, cv=cv, scoring='roc_auc')
+grid_xgb.fit(X_train, y_train, groups=groups.iloc[train_idx])  # <-- important
+
+print("Best parameters (XGBoost):", grid_xgb.best_params_)
+xgb_best = grid_xgb.best_estimator_
+
+models = {
+    'Logistic Regression': logreg_best,
+    'Random Forest': rf_best,
+    'XGBoost': xgb_best
+}
+
+results = {}
+
+for name, model in models.items():
+    y_pred = model.predict(X_test)
+    y_proba = model.predict_proba(X_test)[:,1]
+    results[name] = {
+        'accuracy': accuracy_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred),
+        'recall': recall_score(y_test, y_pred),
+        'f1': f1_score(y_test, y_pred),
+        'roc_auc': roc_auc_score(y_test, y_proba)
+    }
+    print(f"\n{name}:")
+    print(results[name])
+
+    # Confusion matrix
+    cm = confusion_matrix(y_test, y_pred)
+    disp = ConfusionMatrixDisplay(confusion_matrix=cm)
+    disp.plot()
+    plt.title(f'Confusion Matrix: {name}')
+    plt.show()
+
+    # ROC curve
+    fpr, tpr, thresholds = roc_curve(y_test, y_proba)
+    plt.plot(fpr, tpr, label=f'{name} (AUC={results[name]["roc_auc"]:.2f})')
+
+plt.plot([0,1], [0,1], 'k--')
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC Curve (All Models)')
+plt.legend()
+plt.show()
+
+# Handeling unbalanced data
+# 0 for majority 1 for minority
+minority_class = np.random.normal(3,1,100)
+majority_class = np.random.normal(0,1,900)
+data = np.concatenate((majority_class, minority_class))
+labels = np.concatenate((np.zeros(900), np.ones(100)))
