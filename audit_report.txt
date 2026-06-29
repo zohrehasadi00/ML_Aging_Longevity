@@ -72,3 +72,25 @@
       - it should be stratified -> used StratifiedGroupKFold
       - adapted the preprocessing to this
       - adapted the GridSearch to this
+
+## Done by Zohreh
+- Scope: Handling unbalanced data, preventing data leakage, and Logistic Regression.
+- I checked the class balance using the lecture thresholds:
+  - 20–40% = mild
+  - 1–20% = moderate
+  - <1% = extreme
+- I plotted the target, and found that the minority class of the target is 33.8%, which is mild imbalance, so no over- or undersampling is needed.
+- The other features show some imbalance too, but they should be handled by grouping rare categories, like Pablo did.
+- I noticed that ID columns were not being removed from the training and testing sets, so I removed them because they are informative
+ identifiers and can leak information into the model instead of letting it learn general medical patterns.
+- I cleaned the pipeline by moving all imports to the top of the file.
+- I dropped leaky columns before the split, because if they are removed after splitting, they can still influence the
+train/test/validation parts.
+- Logistic Regression stays binary because the target has two classes: 0 = survived, 1 = died.
+- I kept `lbfgs` as the solver because it is a good default for small-to-medium datasets and works well with L2 regularization.
+- Odds ratios were calculated after fitting the best Logistic Regression model.
+  I plotted the top 10 most influential features affecting the odds of death.
+  The odds ratio for age was also checked; it was clinically sensible (about 1.03) even if it was not in the top 10 (it wasnt in top 15 too).
+- few more plots are added to the plots folder.
+
+TO DO: basically after the line 264 isnt check. next video is Classification Metrics

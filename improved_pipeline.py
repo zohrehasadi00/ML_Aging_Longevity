@@ -30,6 +30,14 @@ adm_pat = pd.merge(admissions, patients, on='subject_id', how='left')
 # Merge the result with icustays on ['subject_id', 'hadm_id']
 adm_pat_icu = pd.merge(adm_pat, icustays, on=['subject_id', 'hadm_id'], how='left')
 
+# adding the age
+adm_pat_icu['age'] = (
+    pd.to_datetime(adm_pat_icu['admittime']) -
+    pd.to_datetime(adm_pat_icu['dob'])
+).dt.days / 365.25
+# Cap age at 90 (MIMIC-III shifts DOB for patients >89 to preserve anonymity)
+adm_pat_icu['age'] = adm_pat_icu['age'].clip(upper=90)
+
 # Check the shape and sample rows of the merged table
 print("Merged table shape:", adm_pat_icu.shape)
 print(adm_pat_icu.head())
@@ -63,42 +71,48 @@ adm_pat_icu['hospital_expire_flag'].value_counts().plot(kind='bar')
 plt.title('Distribution of Hospital Expire Flag')
 plt.xlabel('Hospital Expire Flag (0=Survived, 1=Died)')
 plt.ylabel('Count')
-plt.show()
+plt.savefig('plots/hospital_expire_flag_dist.png', dpi=200)
+plt.close()
 
 # Plot gender distribution
 adm_pat_icu['gender'].value_counts().plot(kind='bar')
 plt.title('Gender Distribution')
 plt.xlabel('Gender')
 plt.ylabel('Count')
-plt.show()
+plt.savefig('plots/gender_dist.png', dpi=200)
+plt.close()
 
 # Plot admission_type distribution
 adm_pat_icu['admission_type'].value_counts().plot(kind='bar')
 plt.title('Admission Type Distribution')
 plt.xlabel('Admission Type')
 plt.ylabel('Count')
-plt.show()
+plt.savefig('plots/admission_type_dist.png', dpi=200)
+plt.close()
 
 # Plot insurance distribution
 adm_pat_icu['insurance'].value_counts().plot(kind='bar')
 plt.title('Insurance Distribution')
 plt.xlabel('Insurance')
 plt.ylabel('Count')
-plt.show()
+plt.savefig('plots/insurance_dist.png', dpi=200)
+plt.close()
 
 # Plot ethnicity distribution
 adm_pat_icu['ethnicity'].value_counts().plot(kind='bar')
 plt.title('Ethnicity Distribution')
 plt.xlabel('Ethnicity')
 plt.ylabel('Count')
-plt.show()
+plt.savefig('plots/ethnicity_dist.png', dpi=200)
+plt.close()
 
 # Histogram for length of stay (los)
 adm_pat_icu['los'].plot(kind='hist', bins=20)
 plt.title('Distribution of Length of Stay (LOS)')
 plt.xlabel('Length of Stay (days)')
 plt.ylabel('Frequency')
-plt.show()
+plt.savefig('plots/los_hist.png', dpi=200)
+plt.close()
 
 # Boxplot for LOS by hospital_expire_flag
 adm_pat_icu.boxplot(column='los', by='hospital_expire_flag')
@@ -106,7 +120,8 @@ plt.title('LOS by Hospital Expire Flag')
 plt.xlabel('Hospital Expire Flag (0=Survived, 1=Died)')
 plt.ylabel('Length of Stay (days)')
 plt.suptitle('')
-plt.show()
+plt.savefig('plots/los_boxplot.png', dpi=200)
+plt.close()
 
 # Death rate by admission type
 death_by_admtype = adm_pat_icu.groupby('admission_type')['hospital_expire_flag'].mean()
@@ -114,7 +129,8 @@ death_by_admtype.plot(kind='bar')
 plt.title('Death Rate by Admission Type')
 plt.xlabel('Admission Type')
 plt.ylabel('Death Rate')
-plt.show()
+plt.savefig('plots/death_rate_admtype.png', dpi=200)
+plt.close()
 
 # Death rate by insurance
 death_by_insurance = adm_pat_icu.groupby('insurance')['hospital_expire_flag'].mean()
@@ -122,63 +138,28 @@ death_by_insurance.plot(kind='bar')
 plt.title('Death Rate by Insurance')
 plt.xlabel('Insurance')
 plt.ylabel('Death Rate')
-plt.show()
+plt.savefig('plots/death_rate_insurance.png', dpi=200)
+plt.close()
 
 # data ditribution check to know if there is data imbalanced.
-cols_to_plot = [
-    'hospital_expire_flag', 'gender', 'admission_type', 'insurance',
-    'ethnicity', 'first_careunit'
+col = 'hospital_expire_flag'
+vc = adm_pat_icu[col].value_counts(dropna=False)
+print((vc / len(adm_pat_icu) * 100).round(2))
+vc.plot(kind='bar', figsize=(10,6), title=f'{col} Distribution')
+plt.savefig(f'plots/{col}_count.png', dpi=200); plt.close()
+
+# drop leaky data, and IDs
+cols_to_remove = [
+    'row_id_x', 'row_id_y', 'row_id', 'hadm_id', 'icustay_id',
+    'discharge_location', 'dod', 'dod_hosp', 'dod_ssn', 'deathtime', 'expire_flag',
+    'dischtime', 'outtime', 'last_careunit', 'last_wardid',
+    'has_chartevents_data', 'admittime', 'dob', 'edregtime', 'edouttime', 'admission_location', 'dbsource'
 ]
+adm_pat_icu = adm_pat_icu.drop(columns=cols_to_remove, errors='ignore')
+print(f"List of columns remained in datafram:{adm_pat_icu.columns.tolist()}")
 
-for col in cols_to_plot:
-    if col not in adm_pat_icu.columns:
-        continue
-
-    safe_name = col.replace(' ', '_').replace('/', '_').replace('\n', '_')
-    out_path = f'plots/{safe_name}_count.png'
-
-    # print percentage breakdown for this column
-    if pd.api.types.is_numeric_dtype(adm_pat_icu[col]) and col == 'los':
-        # For LOS print basic stats and non-null percentage
-        total = len(adm_pat_icu)
-        nonnull = adm_pat_icu[col].notna().sum()
-        nonnull_pct = nonnull / total * 100
-        print(f"\n{col} - non-null: {nonnull}/{total} ({nonnull_pct:.2f}%)")
-        print(f"  min: {adm_pat_icu[col].min():.2f}, 25%: {adm_pat_icu[col].quantile(0.25):.2f}, median: {adm_pat_icu[col].median():.2f}, mean: {adm_pat_icu[col].mean():.2f}, 75%: {adm_pat_icu[col].quantile(0.75):.2f}, max: {adm_pat_icu[col].max():.2f}")
-    else:
-        vc_pct = adm_pat_icu[col].value_counts(dropna=False, normalize=True) * 100
-        print(f"\n{col} distribution (percentage of total):")
-        for val, pct in vc_pct.items():
-            # format NaN label clearly
-            lab = 'NaN' if pd.isna(val) else str(val)
-            print(f"  {lab}: {pct:.2f}%")
-
-    # Create and save the plot
-    plt.figure(figsize=(10, 6))
-    if pd.api.types.is_numeric_dtype(adm_pat_icu[col]) and col == 'los':
-        # LOS: histogram
-        data = adm_pat_icu[col].dropna()
-        plt.hist(data, bins=30, color='blue', rwidth=0.9)
-        plt.xlabel('Length of Stay (days)', fontsize=12)
-        plt.ylabel('Count', fontsize=12)
-        plt.title('Length of Stay (LOS) Distribution', fontsize=14)
-    else:
-        vc = adm_pat_icu[col].value_counts(dropna=False)
-        labels = vc.index.astype(str)
-        values = vc.values
-        plt.bar(labels, values, color='blue', width=0.6)
-        plt.xlabel(col.replace('_', ' ').title(), fontsize=12)
-        plt.ylabel('Count', fontsize=12)
-        plt.title(col.replace('_', ' ').title() + ' Distribution', fontsize=14)
-        plt.xticks(rotation=45, ha='right')
-
-    plt.tight_layout()
-    plt.savefig(out_path, dpi=200)
-    plt.close()
-    print(f"Saved plot: {out_path}")
-
-# Split: grouped and stratified
-X = adm_pat_icu.drop(columns=['hospital_expire_flag', 'discharge_location', 'los'])
+# Split: grouped and stratified.
+X = adm_pat_icu.drop(columns=['hospital_expire_flag'])
 y = adm_pat_icu['hospital_expire_flag']
 groups = adm_pat_icu['subject_id']  # <-- use patient ID
 
@@ -229,8 +210,8 @@ adm_pat_icu_test = pd.get_dummies(adm_pat_icu_test, columns=categorical_cols, dr
 adm_pat_icu_train, adm_pat_icu_test = adm_pat_icu_train.align(adm_pat_icu_test, join='left', axis=1, fill_value=0)
 
 # Select numeric columns (excluding target and IDs)
-num_cols = [col for col in adm_pat_icu_train.columns 
-            if adm_pat_icu_train[col].dtype != 'object' 
+num_cols = [col for col in adm_pat_icu_train.columns
+            if adm_pat_icu_train[col].dtype != 'object'
             and col not in ['hospital_expire_flag', 'subject_id', 'hadm_id', 'icustay_id', 'row_id_x', 'row_id_y', 'row_id']]
 
 scaler = StandardScaler()
@@ -245,21 +226,17 @@ adm_pat_icu_train = adm_pat_icu_train.drop(columns=zero_var_cols)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=zero_var_cols, errors='ignore')
 
 # Final X/y
-X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag', 'discharge_location', 'los'])
+X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag', 'los'])
 y_train = adm_pat_icu_train['hospital_expire_flag']
 
-X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag', 'discharge_location', 'los'])
+X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag', 'los'])
 y_test = adm_pat_icu_test['hospital_expire_flag']
-
-# Drop ID columns, these are database identifiers, not clinical features.
-id_cols = ['subject_id', 'hadm_id', 'icustay_id', 'row_id_x', 'row_id_y', 'row_id']
-X_train = X_train.drop(columns=[c for c in id_cols if c in X_train.columns], errors='ignore')
-X_test  = X_test.drop(columns=[c for c in id_cols if c in X_test.columns], errors='ignore')
 
 # group-aware CV
 cv = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
 
 # Set up grid search for Logistic Regression
+# print(adm_pat_icu['hospital_expire_flag'].unique()) ->[0 1] -> Binary LR
 logreg = LogisticRegression(max_iter=5000, random_state=42)
 param_grid_lr = {'C': [0.01, 0.1, 1, 10, 100]}
 grid_lr = GridSearchCV(logreg, param_grid_lr, cv=cv, scoring='roc_auc')
@@ -267,6 +244,23 @@ grid_lr.fit(X_train, y_train, groups=groups.iloc[train_idx])
 
 print("Best parameters (Logistic Regression):", grid_lr.best_params_)
 logreg_best = grid_lr.best_estimator_
+
+# Odds ratios - top 10 most influential features affecting odds of death
+odds_ratios = pd.DataFrame({
+    'feature': X_train.columns,
+    'odds_ratio': np.exp(logreg_best.coef_[0])
+}).sort_values('odds_ratio', ascending=False)
+
+# Odds ratios of age OR=1.03 is clinically sensible but it wasnt in top 10
+# print(odds_ratios[odds_ratios['feature'] == 'age'])
+
+mask = ~odds_ratios['feature'].str.startswith(('intime_', 'diagnosis_'))
+odds_ratios[mask].head(10).plot(x='feature', y='odds_ratio', kind='bar', figsize=(12,5))
+plt.title('Top 10 Odds Ratios')
+plt.axhline(y=1, color='r', linestyle='--')
+plt.tight_layout()
+plt.savefig('plots/odds_ratios.png', dpi=200)
+plt.close()
 
 # Set up grid search for Random Forest
 rf = RandomForestClassifier(random_state=42)
@@ -276,10 +270,8 @@ param_grid_rf = {
 }
 grid_rf = GridSearchCV(rf, param_grid_rf, cv=cv, scoring='roc_auc')
 grid_rf.fit(X_train, y_train, groups=groups.iloc[train_idx])
-
 print("Best parameters (Random Forest):", grid_rf.best_params_)
 rf_best = grid_rf.best_estimator_
-
 xgb_clf = xgb.XGBClassifier(random_state=42, eval_metric='logloss')
 param_grid_xgb = {
     'n_estimators': [50, 100, 200],
@@ -287,18 +279,14 @@ param_grid_xgb = {
 }
 grid_xgb = GridSearchCV(xgb_clf, param_grid_xgb, cv=cv, scoring='roc_auc')
 grid_xgb.fit(X_train, y_train, groups=groups.iloc[train_idx])  # <-- important
-
 print("Best parameters (XGBoost):", grid_xgb.best_params_)
 xgb_best = grid_xgb.best_estimator_
-
 models = {
     'Logistic Regression': logreg_best,
     'Random Forest': rf_best,
     'XGBoost': xgb_best
 }
-
 results = {}
-
 for name, model in models.items():
     y_pred = model.predict(X_test)
     y_proba = model.predict_proba(X_test)[:,1]
@@ -311,22 +299,21 @@ for name, model in models.items():
     }
     print(f"\n{name}:")
     print(results[name])
-
     # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.title(f'Confusion Matrix: {name}')
-    plt.show()
+    plt.savefig(f'plots/confusion_matrix_{name}.png', dpi=200)
+    plt.close()
 
     # ROC curve
     fpr, tpr, thresholds = roc_curve(y_test, y_proba)
     plt.plot(fpr, tpr, label=f'{name} (AUC={results[name]["roc_auc"]:.2f})')
-
 plt.plot([0,1], [0,1], 'k--')
 plt.xlabel('False Positive Rate')
 plt.ylabel('True Positive Rate')
 plt.title('ROC Curve (All Models)')
 plt.legend()
-plt.show()
-
+plt.savefig('plots/roc_curve.png', dpi=200)
+plt.close()
