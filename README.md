@@ -65,11 +65,13 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | Adjusted categorical cardinality cutoff boundary from **20** to **15** | | ✔ | |
 | Relocated MSNO matrix/bar chart placement to occur post-outlier removal | | ✔ | |
 | Added a missing row-wise NaN histogram using `bins=30` | | ✔ | |
+| Dropped `intime` before encoding (timestamp, not a real category, not fit for cardinality bucketing) | | ✔ | |
 | **Data Leakage & Feature Selection** | | | |
 | Identified and dropped direct target leakage columns (`discharge_location`, `expire_flag`, `dod`, `deathtime`, etc.) | ✔ | | ✔ |
 | Dropped temporal leakage columns known only post-admission (`dischtime`, `outtime`, `los`, etc.) | ✔ | | ✔ |
 | Dropped predictive proxy features (`has_chartevents_data`) | | | ✔ |
-| Dropped duplicate ID/identifier columns (`row_id`, `subject_id`, `hadm_id`, `icustay_id`) | ✔ | | ✔ |
+| Dropped duplicate ID/identifier columns (`row_id`, `hadm_id`, `icustay_id`) | ✔ | | ✔ |
+| Found and removed `subject_id` still present in final model features (missed earlier) | | ✔ | |
 | Formulated the engineering of the 'age' feature by calculating `admittime - dob` | | | ✔ |
 | Ensured leaky and ID columns are completely dropped *before* splitting data / entering model | ✔ | | |
 | **Data Splitting Strategy** | | | |
