@@ -203,13 +203,22 @@ for col in ['age']:
     adm_pat_icu_train.loc[train_is_outlier, col] = np.nan
     adm_pat_icu_test.loc[test_is_outlier, col] = np.nan
 
-# MSNO plots to check missingness after outliers are removed (Outliers lecture)
+# MSNO plots to check missingness after outliers are removed (from Outliers lecture)
 msno.matrix(adm_pat_icu_train)
 plt.savefig('plots/missing_matrix.png', dpi=200, bbox_inches='tight')
 plt.close()
 
 msno.bar(adm_pat_icu_train)
 plt.savefig('plots/missing_bar.png', dpi=200, bbox_inches='tight')
+plt.close()
+
+# Row-wise NaN histogram, bins=30 
+nan_per_row = adm_pat_icu_train.isnull().sum(axis=1)
+nan_per_row.plot(kind='hist', bins=30)
+plt.title('Missing Values per Row')
+plt.xlabel('Number of Missing Values')
+plt.ylabel('Number of Rows')
+plt.savefig('plots/nan_per_row.png', dpi=200, bbox_inches='tight')
 plt.close()
 
 # Fill missing values in categorical variables with 'Unknown'
