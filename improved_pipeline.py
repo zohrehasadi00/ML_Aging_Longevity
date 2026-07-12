@@ -238,12 +238,12 @@ adm_pat_icu_train['age'].plot(kind='hist', bins=20)
 plt.title('age (Cleaned)')
 plt.xlabel('Age')
 plt.ylabel('Frequency')
-plt.savefig('plots/histograms.png', dpi=200, bbox_inches='tight')
+plt.savefig('plots/age_histogram_cleaned.png', dpi=200, bbox_inches='tight')
 plt.close()
 
 adm_pat_icu_train.boxplot(column='age')
 plt.title('age (Cleaned)')
-plt.savefig('plots/boxplots.png', dpi=200, bbox_inches='tight')
+plt.savefig('plots/age_boxplot_cleaned.png', dpi=200, bbox_inches='tight')
 plt.close()
 
 # Cap LOS at 99th percentile to handle extreme outliers
