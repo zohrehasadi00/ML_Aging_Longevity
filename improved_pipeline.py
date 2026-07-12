@@ -182,6 +182,27 @@ cols_to_drop = missing_rate[missing_rate > threshold].index.tolist()
 adm_pat_icu_train = adm_pat_icu_train.drop(columns=cols_to_drop)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=cols_to_drop, errors='ignore')
 
+# Outlier detection with IQR method, threshold = 2.5 (from lecture)
+# only checking age here
+outlier_thresh = 2.5
+
+for col in ['age']:
+    q1 = adm_pat_icu_train[col].quantile(0.25)
+    q3 = adm_pat_icu_train[col].quantile(0.75)
+    iqr = q3 - q1
+    lower_bound = q1 - outlier_thresh * iqr
+    upper_bound = q3 + outlier_thresh * iqr
+
+    train_is_outlier = (adm_pat_icu_train[col] < lower_bound) | (adm_pat_icu_train[col] > upper_bound)
+    test_is_outlier = (adm_pat_icu_test[col] < lower_bound) | (adm_pat_icu_test[col] > upper_bound)
+    print(f"{col}: bounds [{lower_bound:.1f}, {upper_bound:.1f}], "
+          f"{train_is_outlier.sum()} outliers in train, {test_is_outlier.sum()} in test")
+
+    # set outliers to NaN
+    adm_pat_icu_train.loc[train_is_outlier, col] = np.nan
+    adm_pat_icu_test.loc[test_is_outlier, col] = np.nan
+
+
 # Fill missing values in categorical variables with 'Unknown'
 for col in adm_pat_icu_train.select_dtypes(include=['object', 'string']).columns:
     adm_pat_icu_train[col] = adm_pat_icu_train[col].fillna('Unknown')
