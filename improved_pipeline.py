@@ -261,11 +261,11 @@ zero_var_cols = nunique[nunique <= 1].index.tolist()
 adm_pat_icu_train = adm_pat_icu_train.drop(columns=zero_var_cols)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=zero_var_cols, errors='ignore')
 
-# Final X/y
-X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag', 'los'])
+# Final X/y, also drop subject_id here since it's just an ID, not a real feature
+X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag', 'los', 'subject_id'])
 y_train = adm_pat_icu_train['hospital_expire_flag']
 
-X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag', 'los'])
+X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag', 'los', 'subject_id'])
 y_test = adm_pat_icu_test['hospital_expire_flag']
 
 # group-aware CV
