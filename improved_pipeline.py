@@ -220,8 +220,23 @@ los_cap = adm_pat_icu_train['los'].quantile(0.99)
 adm_pat_icu_train['los'] = adm_pat_icu_train['los'].clip(upper=los_cap)
 adm_pat_icu_test['los'] = adm_pat_icu_test['los'].clip(upper=los_cap)
 
+# intime is a timestamp(not a real category)
+adm_pat_icu_train = adm_pat_icu_train.drop(columns=['intime'])
+adm_pat_icu_test = adm_pat_icu_test.drop(columns=['intime'], errors='ignore')
+
 # List of categorical columns
 categorical_cols = [col for col in adm_pat_icu_train.select_dtypes(include=['object', 'string']).columns if col != 'hospital_expire_flag']
+
+# Cardinality cutoff (from lecture Dta Preprocessing)
+cardinality_cutoff = 15
+
+for col in categorical_cols:
+    n_unique = adm_pat_icu_train[col].nunique()
+    if n_unique > cardinality_cutoff:
+        top_categories = adm_pat_icu_train[col].value_counts().head(cardinality_cutoff).index
+        print(f"{col}: {n_unique} categories, keeping top {cardinality_cutoff}, rest -> 'Other'")
+        adm_pat_icu_train[col] = adm_pat_icu_train[col].apply(lambda x: x if x in top_categories else 'Other')
+        adm_pat_icu_test[col] = adm_pat_icu_test[col].apply(lambda x: x if x in top_categories else 'Other')
 
 # Apply one-hot encoding
 adm_pat_icu_train = pd.get_dummies(adm_pat_icu_train, columns=categorical_cols, drop_first=True)
