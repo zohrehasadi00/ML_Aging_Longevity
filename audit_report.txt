@@ -94,3 +94,7 @@ train/test/validation parts.
 - few more plots are added to the plots folder.
 
 TO DO: basically after the line 264 isnt check. next video is Classification Metrics
+
+## Done by Ons
+- I added outlier detection for the age column using the IQR method, following the Outliers lecture, which compares thresholds of 0.5, 1.5, 2.5, and 3.0 and settles on 2.5 as a reasonable middle ground between flagging too many points and missing real outliers. I limited the check to age because the pipeline's other numeric columns are identifiers or codes (subject_id, first_wardid), not real measurements and length of stay already has its own dedicated 99th-percentile cap earlier in the pipeline. To avoid leakage, the lower/upper bounds are computed from the training split only and reused unchanged on the test split so it's consistent with how every other preprocessing step in this pipeline already treats train vs. test. Outlier values are set to missing rather than dropped outright, so they flow into the existing median-imputation step right after instead of needing separate handling.
+
