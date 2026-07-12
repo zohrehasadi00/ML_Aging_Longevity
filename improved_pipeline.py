@@ -233,6 +233,19 @@ for col in adm_pat_icu_train.select_dtypes(include='number').columns:
         adm_pat_icu_train[col] = adm_pat_icu_train[col].fillna(median_val)
         adm_pat_icu_test[col] = adm_pat_icu_test[col].fillna(median_val)
 
+# Histogram and boxplot for age after cleaning
+adm_pat_icu_train['age'].plot(kind='hist', bins=20)
+plt.title('age (Cleaned)')
+plt.xlabel('Age')
+plt.ylabel('Frequency')
+plt.savefig('plots/histograms.png', dpi=200, bbox_inches='tight')
+plt.close()
+
+adm_pat_icu_train.boxplot(column='age')
+plt.title('age (Cleaned)')
+plt.savefig('plots/boxplots.png', dpi=200, bbox_inches='tight')
+plt.close()
+
 # Cap LOS at 99th percentile to handle extreme outliers
 los_cap = adm_pat_icu_train['los'].quantile(0.99)
 adm_pat_icu_train['los'] = adm_pat_icu_train['los'].clip(upper=los_cap)
