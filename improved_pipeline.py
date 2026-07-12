@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import missingno as msno
 import xgboost as xgb
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import StratifiedGroupKFold
@@ -182,7 +183,7 @@ cols_to_drop = missing_rate[missing_rate > threshold].index.tolist()
 adm_pat_icu_train = adm_pat_icu_train.drop(columns=cols_to_drop)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=cols_to_drop, errors='ignore')
 
-# Outlier detection with IQR method, threshold = 2.5 (from lecture)
+# Outlier detection with IQR method, threshold = 2.5 (from lecture Outliers)
 # only checking age here
 outlier_thresh = 2.5
 
@@ -202,6 +203,14 @@ for col in ['age']:
     adm_pat_icu_train.loc[train_is_outlier, col] = np.nan
     adm_pat_icu_test.loc[test_is_outlier, col] = np.nan
 
+# MSNO plots to check missingness after outliers are removed (from Outliers lecture)
+msno.matrix(adm_pat_icu_train)
+plt.savefig('plots/missing_matrix.png', dpi=200)
+plt.close()
+
+msno.bar(adm_pat_icu_train)
+plt.savefig('plots/missing_bar.png', dpi=200)
+plt.close()
 
 # Fill missing values in categorical variables with 'Unknown'
 for col in adm_pat_icu_train.select_dtypes(include=['object', 'string']).columns:
