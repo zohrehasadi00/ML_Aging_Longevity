@@ -46,6 +46,9 @@
   nan_per_row.png       (Outliers, p23)
   missing_bar.png       (Outliers, p24)
   missing_matrix.png    (Outliers, p24)
+!!!  Note: this work previously lived in a separate improved_pipeline_ons.py
+  that was never merged into the shared improved_pipeline.py. Redoing it
+  directly inside the shared file now.
 
 
 ## Done by Pablo
