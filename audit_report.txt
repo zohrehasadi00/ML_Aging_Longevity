@@ -109,3 +109,28 @@ Plots added to the plot folder are missing_bar and missing_matrix
 - I added a histogram (nan_per_row) showing how many missing values each row has, using bins=30 as the lecture does. Most rows (94 out of 109 in the training split) have no missing values at all, 14 rows are missing exactly one value, and only 1 row is missing two so missingness here is minor and concentrated in a couple of columns (religion, marital_status), not spread out across many rows.
 - I added a histogram and boxplot for age labeled "(Cleaned)", generated after outlier removal and imputation. Note: the boxplot still shows a few points as circles below the whiskers.. i googled that and it seems to be just matplotlib's own default boxplot rule (1.5×IQR), separate from the 2.5×IQR threshold actually used to clean the data.
 Plots added to the plts folder: age_histogram_cleaned.png and age_boxplot_cleaned.png
+
+
+## Done by Pablo
+Identified some issues:
+1. We split the data into a training set and a test set, which is correct. 
+   We then preprocess the entire training set (e.g., imputation, scaling, one-hot encoding). 
+   After that, we use GridSearchCV, which internally splits the training set into smaller training and validation folds to find the best hyperparameters. 
+   Since the preprocessing was already fitted on the entire training set, each validation fold has already influenced the preprocessing (such as the scaling statistics and imputation values). 
+   Ideally, the preprocessing should be fitted only on each inner training fold and then applied to its corresponding validation fold.
+
+   We have 2 options to solve this:
+      1. move all data-dependent preprocessing steps into an sklearn Pipeline (and ideally custom transformers), then pass that pipeline directly to GridSearchCV so each fold fits preprocessing only on its own training partition. This is more complex, hasn't been done in the lecture and imo overkill because its just to find the model parameters
+      2. we add a validation split and use that to find our parameters. this is easier to implement and fits the level of this lecture better
+
+2. Our task: Predict mortality using information available at hospital admission. - Right? XD
+   admission_location: this is not leakage - not drop
+
+3. After merging the ADMISSIONS and ICUSTAYS tables, some hospital admissions appear multiple times because a small number of patients have more than one ICU stay during the same admission.
+   I checked this and it shows that 123 of 129 admissions (95.3%) had a single ICU stay, while only six admissions had multiple ICU stays. 
+   Therefore, the impact on the analysis is expected to be minimal.
+   Number of ICU stays per hospital admission:
+   1    123
+   2      5
+   3      1
+

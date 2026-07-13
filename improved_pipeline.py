@@ -36,8 +36,15 @@ adm_pat_icu['age'] = (
     pd.to_datetime(adm_pat_icu['admittime']) -
     pd.to_datetime(adm_pat_icu['dob'])
 ).dt.days / 365.25
+
 # Cap age at 90 (MIMIC-III shifts DOB for patients >89 to preserve anonymity)
 adm_pat_icu['age'] = adm_pat_icu['age'].clip(upper=90)
+
+# Check how many ICU stays each hospital admission has
+duplicates = adm_pat_icu.groupby("hadm_id").size()
+
+print("\nNumber of ICU stays per hospital admission:")
+print(duplicates.value_counts().sort_index())
 
 # Check the shape and sample rows of the merged table
 print("Merged table shape:", adm_pat_icu.shape)
@@ -154,7 +161,7 @@ cols_to_remove = [
     'row_id_x', 'row_id_y', 'row_id', 'hadm_id', 'icustay_id',
     'discharge_location', 'dod', 'dod_hosp', 'dod_ssn', 'deathtime', 'expire_flag',
     'dischtime', 'outtime', 'last_careunit', 'last_wardid',
-    'has_chartevents_data', 'admittime', 'dob', 'edregtime', 'edouttime', 'admission_location', 'dbsource'
+    'has_chartevents_data', 'admittime', 'dob', 'edregtime', 'edouttime', 'dbsource'
 ]
 adm_pat_icu = adm_pat_icu.drop(columns=cols_to_remove, errors='ignore')
 print(f"List of columns remained in datafram:{adm_pat_icu.columns.tolist()}")
