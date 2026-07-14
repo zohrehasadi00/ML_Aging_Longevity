@@ -49,6 +49,7 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | Created GitHub repository, fixed initialization, and managed invitations | ✔ | | |
 | Configured system logging (`INFO` level, console output via `setup_logging()`) | ✔ | | |
 | Added missing core packages (`numpy`, `matplotlib`, `seaborn`, `missingno`, `scikit-learn`) to `requirements.txt` | | ✔ | |
+| Added missing `xgboost` package to `requirements.txt` (used by the pipeline but undocumented) | | ✔ | |
 | Cleaned pipeline script by moving all library imports to the top of the file | ✔ | | |
 | **Data Loading & Data Dictionary** | | | |
 | Loaded core MIMIC demo CSVs (`PATIENTS`, `ADMISSIONS`, `ICUSTAYS`) and logged shapes | ✔ | | |
@@ -56,7 +57,8 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | Created a general column dictionary for team alignment | ✔ | | |
 | **Exploratory Data Analysis (EDA) & Plotting** | | | |
 | Uploaded `plots/` folder with complete data plots (Histograms, Boxplots, MSNO) | ✔ | ✔ | |
-| Added "(Cleaned)" labels to histogram/boxplot titles post-value removal | | ✔ | |
+| Generated age histogram/boxplot after outlier cleaning | | ✔ | |
+| Fixed MSNO/histogram plots getting cut off when saved (`bbox_inches='tight'`) | | ✔ | |
 | Plotted target variable distribution for class balance analysis | ✔ | | |
 | Plotted Top 10 most influential features based on calculated Odds Ratios | ✔ | | |
 | **Data Preprocessing & Outliers** | | | |
