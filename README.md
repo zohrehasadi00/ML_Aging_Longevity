@@ -49,7 +49,7 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | Created GitHub repository, fixed initialization, and managed invitations | ✔ | | |
 | Configured system logging (`INFO` level, console output via `setup_logging()`) | ✔ | | |
 | Added missing core packages (`numpy`, `matplotlib`, `seaborn`, `missingno`, `scikit-learn`) to `requirements.txt` | | ✔ | |
-| Added missing `xgboost` package to `requirements.txt` (used by the pipeline but undocumented) | | ✔ | |
+| Added missing `xgboost` package to `requirements.txt`| | ✔ | |
 | Cleaned pipeline script by moving all library imports to the top of the file | ✔ | | |
 | **Data Loading & Data Dictionary** | | | |
 | Loaded core MIMIC demo CSVs (`PATIENTS`, `ADMISSIONS`, `ICUSTAYS`) and logged shapes | ✔ | | |
