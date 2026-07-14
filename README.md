@@ -58,7 +58,6 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | **Exploratory Data Analysis (EDA) & Plotting** | | | |
 | Uploaded `plots/` folder with complete data plots (Histograms, Boxplots, MSNO) | ✔ | ✔ | |
 | Generated age histogram/boxplot after outlier cleaning | | ✔ | |
-| Fixed MSNO/histogram plots getting cut off when saved (`bbox_inches='tight'`) | | ✔ | |
 | Plotted target variable distribution for class balance analysis | ✔ | | |
 | Plotted Top 10 most influential features based on calculated Odds Ratios | ✔ | | |
 | **Data Preprocessing & Outliers** | | | |
