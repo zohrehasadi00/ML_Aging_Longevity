@@ -190,6 +190,29 @@ cols_to_drop = missing_rate[missing_rate > threshold].index.tolist()
 adm_pat_icu_train = adm_pat_icu_train.drop(columns=cols_to_drop)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=cols_to_drop, errors='ignore')
 
+# Compare outlier thresholds 0.5, 1.5, 2.5, 3.0 to justify picking 2.5 (Outliers lecture)
+thresholds_to_compare = [0.5, 1.5, 2.5, 3.0]
+outlier_counts = []
+
+q1_age = adm_pat_icu_train['age'].quantile(0.25)
+q3_age = adm_pat_icu_train['age'].quantile(0.75)
+iqr_age = q3_age - q1_age
+
+for t in thresholds_to_compare:
+    lower = q1_age - t * iqr_age
+    upper = q3_age + t * iqr_age
+    n_outliers = ((adm_pat_icu_train['age'] < lower) | (adm_pat_icu_train['age'] > upper)).sum()
+    outlier_counts.append(n_outliers)
+    print(f"threshold {t}: {n_outliers} outliers flagged")
+
+plt.bar([str(t) for t in thresholds_to_compare], outlier_counts)
+plt.title('Outlier Count by IQR Threshold (age)')
+plt.xlabel('IQR Threshold')
+plt.ylabel('Number of Outliers Flagged')
+plt.savefig('plots/outlier_thresholds.png', dpi=200, bbox_inches='tight')
+plt.close()
+
+
 # Outlier detection with IQR method, threshold = 2.5 (from lecture Outliers)
 # only checking age here
 outlier_thresh = 2.5
