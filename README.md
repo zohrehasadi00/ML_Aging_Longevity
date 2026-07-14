@@ -63,8 +63,9 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | **Data Preprocessing & Outliers** | | | |
 | Calculated missing-rates per column and dropped columns with >30% missingness (`drop_thresh = 0.3`) | ✔ | | |
 | Adjusted outlier threshold to **2.5** based on lecture guidelines | | ✔ | |
+| Compared outlier counts across IQR thresholds (0.5/1.5/2.5/3.0) to justify keeping 2.5 | | ✔ | |
 | Adjusted categorical cardinality cutoff boundary from **20** to **15** | | ✔ | |
-| Relocated MSNO matrix/bar chart placement to occur post-outlier removal | | ✔ | |
+| Added MSNO matrix/bar chart, placed after outlier removal | | ✔ | |
 | Added a missing row-wise NaN histogram using `bins=30` | | ✔ | |
 | Dropped `intime` before encoding (timestamp, not a real category, not fit for cardinality bucketing) | | ✔ | |
 | **Data Leakage & Feature Selection** | | | |
