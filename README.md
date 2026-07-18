@@ -85,3 +85,4 @@ This matrix maps out the tasks completed during the audit phase of the **ML_Agin
 | Set up binary Logistic Regression to predict survival (`0`) vs. death (`1`) | ✔ | | |
 | Kept `lbfgs` solver with L2 regularization for small-to-medium dataset optimization | ✔ | | |
 | Extracted and checked clinical plausibility of feature Odds Ratios (e.g., age at ~1.03) | ✔ | | |
+| Model selection & metrics (short): RF + XGBoost; AUC, precision/recall, F1, confusion matrix; recall important clinically | ✔ | | |
