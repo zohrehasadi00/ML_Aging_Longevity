@@ -95,8 +95,8 @@ train/test/validation parts.
   I plotted the top 10 most influential features affecting the odds of death.
   The odds ratio for age was also checked; it was clinically sensible (about 1.03) even if it was not in the top 10 (it wasnt in top 15 too).
 - few more plots are added to the plots folder.
-
-TO DO: basically after the line 264 isnt check. next video is Classification Metrics
+- For model selection and metrics, I used Random Forest and XGBoost (robust tree methods; XGBoost adds boosting/regularization).
+- Kept AUC, precision/recall, F1 and confusion matrix -> appropriate for the mild (~33.8%) imbalance; recall is key clinically.
 
 ## Done by Ons
 -Before starting my part, I checked on Zohreh's TODO note saying classification metrics weren't checked yet. I ran the pipeline myself and confirmed Random Forest, XGBoost, and all the metrics are already implemented and working — the TODO note was just never deleted after that work was actually finished.
