@@ -25,7 +25,7 @@ print(admissions.head())
 print("\nICUSTAYS.csv shape:", icustays.shape)
 print(icustays.head())
 
-# Merge patients and admissions on 'subject_id'
+# Merge patients and admissions on 'subject_id', this id will remain untill the very end, cause it will be needed for setting up the StratifiedGroupKFold split
 adm_pat = pd.merge(admissions, patients, on='subject_id', how='left')
 
 # Merge the result with icustays on ['subject_id', 'hadm_id']
@@ -161,7 +161,7 @@ cols_to_remove = [
     'row_id_x', 'row_id_y', 'row_id', 'hadm_id', 'icustay_id',
     'discharge_location', 'dod', 'dod_hosp', 'dod_ssn', 'deathtime', 'expire_flag',
     'dischtime', 'outtime', 'last_careunit', 'last_wardid',
-    'has_chartevents_data', 'admittime', 'dob', 'edregtime', 'edouttime', 'dbsource'
+    'has_chartevents_data', 'admittime', 'dob', 'edregtime', 'edouttime', 'dbsource', 'los'
 ]
 adm_pat_icu = adm_pat_icu.drop(columns=cols_to_remove, errors='ignore')
 print(f"List of columns remained in datafram:{adm_pat_icu.columns.tolist()}")
@@ -178,6 +178,9 @@ train_idx, test_idx = next(sgkf.split(X, y, groups=groups))  # <-- one fold as t
 adm_pat_icu_train = adm_pat_icu.iloc[train_idx].copy()
 adm_pat_icu_test = adm_pat_icu.iloc[test_idx].copy()
 
+# Drop subject_id here so it doesn't clutter preprocessing
+adm_pat_icu_train = adm_pat_icu_train.drop(columns=['subject_id'])
+adm_pat_icu_test = adm_pat_icu_test.drop(columns=['subject_id'], errors='ignore')
 
 # Preprocessing
 # Calculate missing value rates
@@ -276,11 +279,6 @@ plt.title('age (Cleaned)')
 plt.savefig('plots/age_boxplot_cleaned.png', dpi=200, bbox_inches='tight')
 plt.close()
 
-# Cap LOS at 99th percentile to handle extreme outliers
-los_cap = adm_pat_icu_train['los'].quantile(0.99)
-adm_pat_icu_train['los'] = adm_pat_icu_train['los'].clip(upper=los_cap)
-adm_pat_icu_test['los'] = adm_pat_icu_test['los'].clip(upper=los_cap)
-
 # intime is a timestamp(not a real category)
 adm_pat_icu_train = adm_pat_icu_train.drop(columns=['intime'])
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=['intime'], errors='ignore')
@@ -306,11 +304,7 @@ adm_pat_icu_test = pd.get_dummies(adm_pat_icu_test, columns=categorical_cols, dr
 # Align columns
 adm_pat_icu_train, adm_pat_icu_test = adm_pat_icu_train.align(adm_pat_icu_test, join='left', axis=1, fill_value=0)
 
-# Select numeric columns (excluding target and IDs)
-num_cols = [col for col in adm_pat_icu_train.columns
-            if adm_pat_icu_train[col].dtype != 'object'
-            and col not in ['hospital_expire_flag', 'subject_id', 'hadm_id', 'icustay_id', 'row_id_x', 'row_id_y', 'row_id']]
-
+num_cols = adm_pat_icu_train.select_dtypes(include='number').columns.drop('hospital_expire_ratio', errors='ignore').drop('hospital_expire_flag', errors='ignore').tolist()
 scaler = StandardScaler()
 adm_pat_icu_train[num_cols] = scaler.fit_transform(adm_pat_icu_train[num_cols])
 adm_pat_icu_test[num_cols] = scaler.transform(adm_pat_icu_test[num_cols])
@@ -323,10 +317,10 @@ adm_pat_icu_train = adm_pat_icu_train.drop(columns=zero_var_cols)
 adm_pat_icu_test = adm_pat_icu_test.drop(columns=zero_var_cols, errors='ignore')
 
 # Final X/y, also drop subject_id here since it's just an ID, not a real feature
-X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag', 'los', 'subject_id'])
+X_train = adm_pat_icu_train.drop(columns=['hospital_expire_flag'])
 y_train = adm_pat_icu_train['hospital_expire_flag']
 
-X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag', 'los', 'subject_id'])
+X_test = adm_pat_icu_test.drop(columns=['hospital_expire_flag'])
 y_test = adm_pat_icu_test['hospital_expire_flag']
 
 # group-aware CV
