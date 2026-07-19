@@ -1,9 +1,9 @@
 import pandas as pd
 
 # Read core tables
-patients = pd.read_csv('mimic_demo/PATIENTS.csv')
-admissions = pd.read_csv('mimic_demo/ADMISSIONS.csv')
-icustays = pd.read_csv('mimic_demo/ICUSTAYS.csv')
+patients = pd.read_csv('PATIENTS.csv')
+admissions = pd.read_csv('ADMISSIONS.csv')
+icustays = pd.read_csv('ICUSTAYS.csv')
 
 # Preview the shape and first rows of each table
 print("PATIENTS.csv shape:", patients.shape)
