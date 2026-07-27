@@ -174,4 +174,5 @@ Lecture connection:
 - I removed the old manual preprocessing and odds-ratio code because they did not work correctly with the new pipeline structure.
 - I changed the ICU merge from left to inner. Since the prediction point is the
   first ICU admission, the dataset should only contain hospital admissions that have an ICU stay.
+- I removed seaborn and missingno from the dependency files because they are no longer used in the updated pipeline.
 
