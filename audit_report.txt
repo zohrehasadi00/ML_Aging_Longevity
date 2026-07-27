@@ -167,3 +167,9 @@ Lecture connection:
 - After checking the grouped split, I saved the patient IDs separately before
   removing subject_id from the model features. I also added a check to confirm
   that no patient appears in both the training and test sets.
+-I found that missing-value handling, encoding and scaling were done before the inner cross-validation so i changed all three models to use sklearn Pipelines. The preprocessing is now
+  fitted separately in each training fold during GridSearchCV.
+- I kept StratifiedGroupKFold and used the patient IDs as groups, so the same
+  patient cannot appear in both training and validation in one fold.
+- I removed the old manual preprocessing and odds-ratio code because they did not work correctly with the new pipeline structure.
+
