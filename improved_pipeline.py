@@ -419,3 +419,16 @@ plt.title('ROC Curve (All Models)')
 plt.legend()
 plt.savefig('plots/roc_curve.png', dpi=200)
 plt.close()
+
+# Save the final test results in one table
+results_df = pd.DataFrame.from_dict(
+    results,
+    orient='index'
+)
+
+results_df.index.name = 'model'
+
+results_df.to_csv('model_results.csv')
+
+print("\nFinal test results:")
+print(results_df)
