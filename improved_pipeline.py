@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import xgboost as xgb
+import os
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.impute import SimpleImputer
 from sklearn.compose import ColumnTransformer
@@ -11,6 +12,10 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, roc_auc_score, confusion_matrix, ConfusionMatrixDisplay, roc_curve
+
+
+# Create the plots folder if it doesnt exist
+os.makedirs('plots', exist_ok=True)
 
 # Read core tables
 patients = pd.read_csv('mimic_demo/PATIENTS.csv')
@@ -199,12 +204,12 @@ sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
 train_idx, test_idx = next(sgkf.split(X, y, groups=groups))  # <-- one fold as test
 
 # Create the train and test datasets
-adm_pat_icu_train = adm_pat_icu.iloc[train_idx].copy()
-adm_pat_icu_test = adm_pat_icu.iloc[test_idx].copy()
+adm_pat_icu_train = adm_pat_icu.iloc[train_idx].copy().reset_index(drop=True)
+adm_pat_icu_test = adm_pat_icu.iloc[test_idx].copy().reset_index(drop=True)
 
 # Save patient IDs for the grouped cross-validation
-groups_train = groups.iloc[train_idx].copy()
-groups_test = groups.iloc[test_idx].copy()
+groups_train = groups.iloc[train_idx].copy().reset_index(drop=True)
+groups_test = groups.iloc[test_idx].copy().reset_index(drop=True)
 
 # Check that the same patient is not in train and test
 patient_overlap = set(groups_train).intersection(set(groups_test))
@@ -234,13 +239,13 @@ categorical_cols = X_train.select_dtypes(
     include=['object', 'string']
 ).columns
 
-# Numeric preprocessing:fill missing values with the median and scale the data
+# Fill missing numeric values with the median and scale the data
 numeric_steps = Pipeline([
     ('fill_missing', SimpleImputer(strategy='median')),
     ('scale', StandardScaler())
 ])
 
-# Categorical preprocessing: fill missing values and use one-hot encoding
+# Fill missing categorical values and use one-hot encoding
 categorical_steps = Pipeline([
     ('fill_missing', SimpleImputer(
         strategy='constant',
@@ -388,9 +393,9 @@ for name, model in models.items():
     y_proba = model.predict_proba(X_test)[:,1]
     results[name] = {
         'accuracy': accuracy_score(y_test, y_pred),
-        'precision': precision_score(y_test, y_pred),
-        'recall': recall_score(y_test, y_pred),
-        'f1': f1_score(y_test, y_pred),
+        'precision': precision_score(y_test, y_pred, zero_division=0),
+        'recall': recall_score(y_test, y_pred, zero_division=0),
+        'f1': f1_score(y_test, y_pred, zero_division=0),
         'roc_auc': roc_auc_score(y_test, y_proba)
     }
     print(f"\n{name}:")
