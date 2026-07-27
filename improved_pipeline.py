@@ -309,16 +309,17 @@ numeric_steps = Pipeline(
     ]
 )
 
-# Fill missing categorical values and use one-hot encoding
-categorical_steps = Pipeline(
-    [
-        (
-            "fill_missing",
-            SimpleImputer(strategy="constant", fill_value="Unknown"),
-        ),
-        ("encode", OneHotEncoder(handle_unknown="ignore")),
-    ]
-)
+# Fill missing categorical values and group rare categories
+categorical_steps = Pipeline([
+    ('fill_missing', SimpleImputer(
+        strategy='constant',
+        fill_value='Unknown'
+    )),
+    ('encode', OneHotEncoder(
+        handle_unknown='infrequent_if_exist',
+        max_categories=15
+    ))
+])
 
 # Apply the correct preprocessing to each type of column
 preprocessing = ColumnTransformer(
