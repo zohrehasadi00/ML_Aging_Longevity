@@ -172,4 +172,6 @@ Lecture connection:
 - I kept StratifiedGroupKFold and used the patient IDs as groups, so the same
   patient cannot appear in both training and validation in one fold.
 - I removed the old manual preprocessing and odds-ratio code because they did not work correctly with the new pipeline structure.
+- I changed the ICU merge from left to inner. Since the prediction point is the
+  first ICU admission, the dataset should only contain hospital admissions that have an ICU stay.
 
