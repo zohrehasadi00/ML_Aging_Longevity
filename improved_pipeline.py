@@ -28,8 +28,26 @@ print(icustays.head())
 # Merge patients and admissions on 'subject_id', this id will remain untill the very end, cause it will be needed for setting up the StratifiedGroupKFold split
 adm_pat = pd.merge(admissions, patients, on='subject_id', how='left')
 
-# Merge the result with icustays on ['subject_id', 'hadm_id']
-adm_pat_icu = pd.merge(adm_pat, icustays, on=['subject_id', 'hadm_id'], how='left')
+# Prediction point:
+# Predict in-hospital mortality at the first ICU admission using only info available up to that time
+
+# Convert ICU admission time to datetime so the first ICU stay can be identified
+icustays['intime'] = pd.to_datetime(icustays['intime'])
+
+# Keep only the first ICU stay for each hospital admission
+first_icustays = (
+    icustays
+    .sort_values('intime')
+    .drop_duplicates(subset='hadm_id', keep='first')
+)
+
+# Merge each hospital admission with its first ICU stay
+adm_pat_icu = pd.merge(
+    adm_pat,
+    first_icustays,
+    on=['subject_id', 'hadm_id'],
+    how='left'
+)
 
 # adding the age
 adm_pat_icu['age'] = (
@@ -40,11 +58,15 @@ adm_pat_icu['age'] = (
 # Cap age at 90 (MIMIC-III shifts DOB for patients >89 to preserve anonymity)
 adm_pat_icu['age'] = adm_pat_icu['age'].clip(upper=90)
 
-# Check how many ICU stays each hospital admission has
-duplicates = adm_pat_icu.groupby("hadm_id").size()
+# Confirm that there is now only one row per hospital admission
+rows_per_admission = adm_pat_icu.groupby('hadm_id').size()
 
-print("\nNumber of ICU stays per hospital admission:")
-print(duplicates.value_counts().sort_index())
+print("\nRows per hospital admission after selecting the first ICU stay:")
+print(rows_per_admission.value_counts().sort_index())
+
+assert rows_per_admission.max() == 1, (
+    "Some hospital admissions still appear more than once."
+)
 
 # Check the shape and sample rows of the merged table
 print("Merged table shape:", adm_pat_icu.shape)
