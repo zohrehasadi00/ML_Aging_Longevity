@@ -1,8 +1,6 @@
-# python 3.11.9
+# Python 3.11.9
 pandas
 numpy
 matplotlib
-seaborn
-missingno
 scikit-learn
 xgboost
