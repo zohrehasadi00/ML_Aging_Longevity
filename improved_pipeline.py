@@ -101,7 +101,7 @@ print("\nMissing value rate per column:\n", missing_rate)
 
 # Separate numeric and categorical columns for EDA
 eda_numeric_cols = adm_pat_icu.select_dtypes(include=["number"]).columns.tolist()
-eda_categorical_cols = adm_pat_icu.select_dtypes(include=["object"]).columns.tolist()
+eda_categorical_cols = adm_pat_icu.select_dtypes(include=["object", "str"]).columns.tolist()
 
 print("\nNumeric columns:", eda_numeric_cols)
 print("\nCategorical columns:", eda_categorical_cols)
@@ -156,6 +156,7 @@ adm_pat_icu["ethnicity"].value_counts().plot(kind="bar")
 plt.title("Ethnicity Distribution")
 plt.xlabel("Ethnicity")
 plt.ylabel("Count")
+plt.xticks(rotation=45, ha="right")
 plt.tight_layout()
 plt.savefig("plots/ethnicity_dist.png", dpi=200)
 plt.close()
