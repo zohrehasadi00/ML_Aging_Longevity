@@ -136,3 +136,30 @@ Identified some issues:
    2      5
    3      1
 
+## Done by Ons
+-After reviewing the current implementation, I found that the outer
+patient-grouped train/test split was correct, but the preprocessing was still
+performed on the complete outer training set before the internal cross-validation.
+This meant that the inner validation folds had already influenced preprocessing
+steps such as missing-value handling, outlier limits, category selection,
+one-hot encoding, scaling parameters and zero-variance feature removal.
+The outer test set remained unseen, so the final test metrics were not directly
+contaminated. However, the internal cross-validation scores could be optimistic,
+and GridSearchCV could select different hyperparameters compared with a fully
+leakage-free procedure.
+I therefore adjusted the implementation so that preprocessing is now fitted
+separately inside every grouped cross-validation fold. All preprocessing
+parameters are learned only from the corresponding inner training fold and then
+applied to its validation fold.
+I also ensured that patient IDs are passed as groups during the inner
+cross-validation, so records from the same patient cannot appear in both the
+training and validation parts of a fold.
+-After hyperparameter selection, preprocessing is fitted again on the complete
+outer training set and applied once to the untouched outer test set. The final
+models are then trained on the complete processed training set and evaluated on
+the test set.
+Lecture connection:
+- L6 Data Leakage: preprocessing before proper data separation and failure to
+  account for dependent samples can introduce leakage.
+- L4 Splitting Data: cross-validation can be used when a separate validation
+  set would be too small or unstable.
