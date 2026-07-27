@@ -175,4 +175,7 @@ Lecture connection:
 - I changed the ICU merge from left to inner. Since the prediction point is the
   first ICU admission, the dataset should only contain hospital admissions that have an ICU stay.
 - I removed seaborn and missingno from the dependency files because they are no longer used in the updated pipeline.
+- I adjusted OneHotEncoder so that rare categories are grouped automatically.
+  A maximum of 15 categories is kept for each categorical feature to reduce the number of very sparse dummy variables and lowers the risk of overfitting. 
+
 
