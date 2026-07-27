@@ -178,4 +178,10 @@ Lecture connection:
 - I adjusted OneHotEncoder so that rare categories are grouped automatically.
   A maximum of 15 categories is kept for each categorical feature to reduce the number of very sparse dummy variables and lowers the risk of overfitting. 
 
+## Remaining limitations to mention in the final report
+- The final evaluation uses one grouped train/test split. Because the test set
+  is small, the reported metrics may change noticeably with a different split.
+  This should be mentioned in Part C as a limitation. Averaging results across
+  all outer folds would give more stable estimates, but was not implemented to
+  keep the pipeline simple.
 
