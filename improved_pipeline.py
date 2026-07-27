@@ -43,12 +43,12 @@ first_icustays = (
     .drop_duplicates(subset='hadm_id', keep='first')
 )
 
-# Merge each hospital admission with its first ICU stay
+# Keep only hospital admissions that have an ICU stay
 adm_pat_icu = pd.merge(
     adm_pat,
     first_icustays,
     on=['subject_id', 'hadm_id'],
-    how='left'
+    how='inner'
 )
 
 # adding the age
@@ -400,7 +400,13 @@ for name, model in models.items():
     disp = ConfusionMatrixDisplay(confusion_matrix=cm)
     disp.plot()
     plt.title(f'Confusion Matrix: {name}')
-    plt.savefig(f'plots/confusion_matrix_{name}.png', dpi=200)
+    # Replace spaces with underscores in the file name
+    file_name = name.replace(' ', '_')
+
+    plt.savefig(
+    f'plots/confusion_matrix_{file_name}.png',
+    dpi=200
+    )
     plt.close()
 
     # ROC curve
