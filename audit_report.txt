@@ -163,3 +163,7 @@ Lecture connection:
   account for dependent samples can introduce leakage.
 - L4 Splitting Data: cross-validation can be used when a separate validation
   set would be too small or unstable.
+
+- After checking the grouped split, I saved the patient IDs separately before
+  removing subject_id from the model features. I also added a check to confirm
+  that no patient appears in both the training and test sets.
