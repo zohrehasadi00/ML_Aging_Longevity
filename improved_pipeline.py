@@ -196,13 +196,24 @@ groups = adm_pat_icu['subject_id']  # <-- use patient ID
 sgkf = StratifiedGroupKFold(n_splits=5, shuffle=True, random_state=42)
 train_idx, test_idx = next(sgkf.split(X, y, groups=groups))  # <-- one fold as test
 
-# create split datasets
+# Create the train and test datasets
 adm_pat_icu_train = adm_pat_icu.iloc[train_idx].copy()
 adm_pat_icu_test = adm_pat_icu.iloc[test_idx].copy()
 
-# Drop subject_id here so it doesn't clutter preprocessing
+# Save patient IDs for the grouped cross-validation
+groups_train = groups.iloc[train_idx].copy()
+groups_test = groups.iloc[test_idx].copy()
+
+# Check that the same patient is not in train and test
+patient_overlap = set(groups_train).intersection(set(groups_test))
+
+print("\nNumber of patients in both train and test:", len(patient_overlap))
+
+assert len(patient_overlap) == 0
+
+# Remove subject_id from the model features
 adm_pat_icu_train = adm_pat_icu_train.drop(columns=['subject_id'])
-adm_pat_icu_test = adm_pat_icu_test.drop(columns=['subject_id'], errors='ignore')
+adm_pat_icu_test = adm_pat_icu_test.drop(columns=['subject_id'])
 
 # Preprocessing
 # Calculate missing value rates
