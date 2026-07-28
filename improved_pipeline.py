@@ -101,7 +101,7 @@ print("\nMissing value rate per column:\n", missing_rate)
 
 # Separate numeric and categorical columns for EDA
 eda_numeric_cols = adm_pat_icu.select_dtypes(include=["number"]).columns.tolist()
-eda_categorical_cols = adm_pat_icu.select_dtypes(include=["object", "str"]).columns.tolist()
+eda_categorical_cols = adm_pat_icu.select_dtypes(include=["object", "string"]).columns.tolist()
 
 print("\nNumeric columns:", eda_numeric_cols)
 print("\nCategorical columns:", eda_categorical_cols)
