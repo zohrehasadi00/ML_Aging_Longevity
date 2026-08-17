@@ -1,44 +1,64 @@
-# Machine Learning for Aging and Longevity
+Machine Learning for Aging and Longevity
+Group G5 – Supervised Classification
 
-## Group members
+Group members
 
-- Zohreh Asadi — 519188 — M.Sc. Computer Science
-- Ons Srasra — 466203 — M.Sc. Computational Engineering Science
-- Pablo Strecker García — 391542 — M.Sc. Human Factors
+Zohreh Asadi — 519188 — M.Sc. Computer Science
+Ons Srasra — 466203 — M.Sc. Computational Engineering Science
+Pablo Strecker García — 391542 — M.Sc. Human Factors
 
-## Setup and run
+Files
 
-1. Create and activate a virtual environment.
-2. Install the dependencies:
+* `audit_report.pdf` contains the audit report for Parts A, B and C.
+* `improved_pipeline.py` contains the revised machine learning pipeline.
+* `compare_pipelines.py` is used for the comparison between the original-style and revised pipelines in Part C.
+* `requirements.txt` contains the required Python packages.
 
-   ```powershell
-   uv sync
-   ```
+Data
 
-   or:
+The MIMIC demo data are not included in the submission.
 
-   ```powershell
-   pip install -r requirements.txt
-   ```
+To run the code, the following files are needed:
 
-3. Run the improved pipeline:
+* `PATIENTS.csv`
+* `ADMISSIONS.csv`
+* `ICUSTAYS.csv`
 
-   ```powershell
-   uv run .\improved_pipeline.py
-   ```
+They should be placed in a folder called `mimic_demo`.
 
-4. Run the comparison used in Part C:
-
-   ```powershell
-   uv run .\compare_pipelines.py
-   ```
-
-## Required data
-
-Place these files inside the `mimic_demo` folder:
+The folder structure should look like this:
 
 ```text
-PATIENTS.csv
-ADMISSIONS.csv
-ICUSTAYS.csv
+project_folder/
+├── improved_pipeline.py
+├── compare_pipelines.py
+├── requirements.txt
+└── mimic_demo/
+    ├── PATIENTS.csv
+    ├── ADMISSIONS.csv
+    └── ICUSTAYS.csv
 ```
+
+Setup
+
+The project was tested with Python 3.11.9.
+
+Install the required packages with:
+
+```text
+pip install -r requirements.txt
+```
+
+Running the improved pipeline
+
+```text
+python improved_pipeline.py
+```
+
+Running the comparison for Part C
+
+```text
+python compare_pipelines.py
+```
+
+The scripts generate the model results and plots used in the report.
