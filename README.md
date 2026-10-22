@@ -3,7 +3,6 @@ Supervised Classification
 
 Files
 
-* `audit_report.pdf` contains the audit report for Parts A, B and C.
 * `improved_pipeline.py` contains the revised machine learning pipeline.
 * `compare_pipelines.py` is used for the comparison between the original-style and revised pipelines in Part C.
 * `requirements.txt` contains the required Python packages.
