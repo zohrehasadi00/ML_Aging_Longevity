@@ -1,11 +1,5 @@
 Machine Learning for Aging and Longevity
-Group G5 – Supervised Classification
-
-Group members
-
-Zohreh Asadi — 519188 — M.Sc. Computer Science
-Ons Srasra — 466203 — M.Sc. Computational Engineering Science
-Pablo Strecker García — 391542 — M.Sc. Human Factors
+Supervised Classification
 
 Files
 
